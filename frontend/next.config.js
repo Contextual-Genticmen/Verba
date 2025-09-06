@@ -1,6 +1,7 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
-  output: 'export',
+  // Only enable static export for production builds
+  ...(process.env.BUILD_MODE === 'export' && { output: 'export' }),
   webpack: (config) => {
     config.module.rules.push({
       test: /\.glsl$/,
@@ -25,7 +26,7 @@ const nextConfig = {
 };
 
 // Set assetPrefix only in production/export mode
-if (process.env.NODE_ENV === 'production') {
+if (process.env.NODE_ENV === 'production' && process.env.BUILD_MODE === 'export') {
   nextConfig.assetPrefix = '/static';
 }
 

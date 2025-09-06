@@ -4,8 +4,11 @@
   "private": true,
   "scripts": {
     "dev": "next dev",
-    "build": "next build && cp -r out/* ../goldenverba/server/frontend/out/ && rm -r out",
-    "start": "next start -H 0.0.0.0 -p 8080",
+    "build": "BUILD_MODE=export next build && cp -r out/* ../goldenverba/server/frontend/out/ && rm -r out",
+    "build:server": "next build",
+    "start": "next start -H 0.0.0.0 -p 3000",
+    "start:static": "npm run build && npx serve out -l 3000",
+    "preview": "npx serve out -l 3000",
     "lint": "next lint"
   },
   "dependencies": {
@@ -49,6 +52,7 @@
     "@types/react-window": "^1.8.5",
     "daisyui": "^4.10.1",
     "prettier": "^3.2.5",
-    "raw-loader": "^4.0.2"
+    "raw-loader": "^4.0.2",
+    "serve": "^14.2.5"
   }
 }

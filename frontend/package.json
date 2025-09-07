@@ -4,12 +4,12 @@
   "private": true,
   "scripts": {
     "dev": "next dev",
-    "build": "BUILD_MODE=export next build && cp -r out/* ../goldenverba/server/frontend/out/ && rm -r out",
-    "build:server": "next build",
-    "start": "next start -H 0.0.0.0 -p 3000",
-    "start:static": "npm run build && npx serve out -l 3000",
-    "preview": "npx serve out -l 3000",
-    "lint": "next lint"
+    "build": "next build",
+    "build:production": "next build && cp -r out/* ../goldenverba/server/frontend/out/ && rm -r out",
+    "start": "serve out -l 3000 -s",
+    "start:production": "cd ../goldenverba && python -m goldenverba.server.cli start --port 8000",
+    "lint": "next lint",
+    "clean": "rm -rf .next out ../goldenverba/server/frontend/out/*"
   },
   "dependencies": {
     "@mdx-js/mdx": "^2.3.0",

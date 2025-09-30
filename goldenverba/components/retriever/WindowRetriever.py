@@ -76,7 +76,7 @@ class WindowRetriever(Retriever):
         # TODO Add other search methods
 
         if len(chunks) == 0:
-            return ([], "We couldn't find any chunks to the query")
+            return ([], "")
 
         # Group Chunks by document and sum score
         doc_map = {}

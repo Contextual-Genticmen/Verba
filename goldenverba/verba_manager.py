@@ -729,6 +729,12 @@ class VerbaManager:
             document_uuids,
         )
 
+        # Ensure we always return valid data structures
+        if documents is None:
+            documents = []
+        if context is None:
+            context = ""
+            
         return (documents, context)
 
     async def generate_stream_answer(

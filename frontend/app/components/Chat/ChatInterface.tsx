@@ -269,31 +269,35 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({
   };
 
   const handleSuccessResponse = (data: QueryPayload, sendInput: string) => {
-    setMessages((prev) => [
-      ...prev,
-      { type: "retrieval", content: data.documents, context: data.context },
-    ]);
-
-    addStatusMessage(
-      "Received " + Object.entries(data.documents).length + " documents",
-      "SUCCESS"
-    );
-
+    // Only add retrieval message if we have documents
     if (data.documents.length > 0) {
+      setMessages((prev) => [
+        ...prev,
+        { type: "retrieval", content: data.documents, context: data.context },
+      ]);
+
+      addStatusMessage(
+        "Received " + Object.entries(data.documents).length + " documents",
+        "SUCCESS"
+      );
+
       const firstDoc = data.documents[0];
       setSelectedDocument(firstDoc.uuid);
       setSelectedDocumentScore(
         `${firstDoc.uuid}${firstDoc.score}${firstDoc.chunks.length}`
       );
       setSelectedChunkScore(firstDoc.chunks);
-
-      if (data.context) {
-        streamResponses(sendInput, data.context);
-        setFetchingStatus("RESPONSE");
-      }
     } else {
-      handleErrorResponse("We couldn't find any chunks to your query");
+      // No documents found, but proceed with generation using empty context
+      addStatusMessage(
+        "No relevant documents found, generating response without context",
+        "INFO"
+      );
     }
+
+    // Always proceed to generate response, with or without context
+    streamResponses(sendInput, data.context || "");
+    setFetchingStatus("RESPONSE");
   };
 
   const streamResponses = (query?: string, context?: string) => {

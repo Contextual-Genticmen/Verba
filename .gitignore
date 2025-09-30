@@ -7,6 +7,7 @@ __pycache__
 *.egg-info
 venv
 venv*
+.venv
 dist
 build
 ~
@@ -21,3 +22,6 @@ cache.txt
 .ruff_cache
 *_secrets.json
 ollama
+
+# uv specific
+uv.lock

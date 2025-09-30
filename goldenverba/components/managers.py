@@ -772,6 +772,16 @@ class WeaviateManager:
         if await self.verify_embedding_collection(client, embedder):
             embedder_collection = client.collections.get(self.embedding_table[embedder])
 
+            # Check if the collection has any data before querying
+            try:
+                aggregation = await embedder_collection.aggregate.over_all(total_count=True)
+                if aggregation.total_count == 0:
+                    msg.info(f"Collection {self.embedding_table[embedder]} is empty, returning empty results")
+                    return []
+            except Exception as e:
+                msg.warn(f"Could not check collection {self.embedding_table[embedder]} count: {str(e)}")
+                return []
+
             filters = []
 
             if labels:
@@ -789,26 +799,33 @@ class WeaviateManager:
             else:
                 apply_filters = None
 
-            if limit_mode == "Autocut":
-                chunks = await embedder_collection.query.hybrid(
-                    query=query,
-                    vector=vector,
-                    alpha=0.5,
-                    auto_limit=limit,
-                    return_metadata=MetadataQuery(score=True, explain_score=False),
-                    filters=apply_filters,
-                )
-            else:
-                chunks = await embedder_collection.query.hybrid(
-                    query=query,
-                    vector=vector,
-                    alpha=0.5,
-                    limit=limit,
-                    return_metadata=MetadataQuery(score=True, explain_score=False),
-                    filters=apply_filters,
-                )
+            try:
+                if limit_mode == "Autocut":
+                    chunks = await embedder_collection.query.hybrid(
+                        query=query,
+                        vector=vector,
+                        alpha=0.5,
+                        auto_limit=limit,
+                        return_metadata=MetadataQuery(score=True, explain_score=False),
+                        filters=apply_filters,
+                    )
+                else:
+                    chunks = await embedder_collection.query.hybrid(
+                        query=query,
+                        vector=vector,
+                        alpha=0.5,
+                        limit=limit,
+                        return_metadata=MetadataQuery(score=True, explain_score=False),
+                        filters=apply_filters,
+                    )
 
-            return chunks.objects
+                return chunks.objects
+            except Exception as e:
+                msg.warn(f"Hybrid search failed on collection {self.embedding_table[embedder]}: {str(e)}")
+                return []
+        else:
+            msg.warn(f"Could not verify embedding collection for {embedder}")
+            return []
 
     async def get_chunk_by_ids(
         self, client: WeaviateAsyncClient, embedder: str, doc_uuid: str, ids: list[int]
@@ -816,6 +833,12 @@ class WeaviateManager:
         if await self.verify_embedding_collection(client, embedder):
             embedder_collection = client.collections.get(self.embedding_table[embedder])
             try:
+                # Check if collection has any data before querying
+                aggregation = await embedder_collection.aggregate.over_all(total_count=True)
+                if aggregation.total_count == 0:
+                    msg.info(f"Collection {self.embedding_table[embedder]} is empty, returning empty results")
+                    return []
+
                 weaviate_chunks = await embedder_collection.query.fetch_objects(
                     filters=(
                         Filter.by_property("doc_uuid").equal(str(doc_uuid))
@@ -826,7 +849,9 @@ class WeaviateManager:
                 return weaviate_chunks.objects
             except Exception as e:
                 msg.fail(f"Failed to fetch chunks: {str(e)}")
-                raise e
+                return []
+        else:
+            return []
 
     ### Suggestion Logic
 
@@ -1165,11 +1190,13 @@ class EmbeddingManager:
             if embedder in self.embedders:
                 config = rag_config["Embedder"].components[embedder].config
                 embeddings = await self.embedders[embedder].vectorize(config, [content])
-                return embeddings[0]
+                return embeddings[0] if embeddings else []
             else:
-                raise Exception(f"{embedder} Embedder not found")
+                msg.warn(f"{embedder} Embedder not found, returning empty vector")
+                return []
         except Exception as e:
-            raise e
+            msg.warn(f"Query vectorization failed: {str(e)}, returning empty vector")
+            return []
 
 
 class RetrieverManager:
@@ -1191,7 +1218,8 @@ class RetrieverManager:
     ):
         try:
             if retriever not in self.retrievers:
-                raise Exception(f"Retriever {retriever} not found")
+                msg.warn(f"Retriever {retriever} not found, returning empty results")
+                return ([], "")
 
             embedder_model = (
                 rag_config["Embedder"]
@@ -1210,10 +1238,18 @@ class RetrieverManager:
                 labels,
                 document_uuids,
             )
+            
+            # Ensure we always return valid data structures
+            if documents is None:
+                documents = []
+            if context is None:
+                context = ""
+                
             return (documents, context)
 
         except Exception as e:
-            raise e
+            msg.warn(f"Retrieval failed: {str(e)}, returning empty results")
+            return ([], "")
 
 
 class GeneratorManager:

@@ -431,6 +431,10 @@ async def query(payload: QueryPayload):
             client, payload.query, payload.RAG, payload.labels, documents_uuid
         )
 
+        # Log info when no documents are found but allow processing to continue
+        if len(documents) == 0:
+            msg.info(f"No documents found for query: {payload.query}, proceeding with empty context")
+        
         return JSONResponse(
             content={"error": "", "documents": documents, "context": context}
         )

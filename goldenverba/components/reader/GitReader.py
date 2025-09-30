@@ -104,6 +104,53 @@ class GitReader(Reader):
                     )
 
                 if content:
+                    # Extract file information for enhanced metadata
+                    file_directory = os.path.dirname(_file) if os.path.dirname(_file) else "root"
+                    file_basename = os.path.basename(_file)
+                    file_name_without_ext = os.path.splitext(file_basename)[0]
+                    
+                    # Determine file category based on extension and path
+                    file_category = self.categorize_file(_file, extension)
+                    
+                    # Create comprehensive metadata for RAG context
+                    enhanced_metadata = {
+                        # Git repository context
+                        "git_platform": platform,
+                        "repository_owner": owner,
+                        "repository_name": name,
+                        "repository_full_name": f"{owner}/{name}",
+                        "branch": branch,
+                        "commit_ref": branch,  # Could be enhanced with actual commit SHA
+                        
+                        # File location and structure
+                        "file_path": _file,
+                        "file_directory": file_directory,
+                        "file_basename": file_basename,
+                        "file_name": file_name_without_ext,
+                        "file_extension": extension,
+                        "file_category": file_category,
+                        "file_size_bytes": size,
+                        
+                        # Content classification
+                        "content_type": self.get_content_type(extension),
+                        "is_documentation": self.is_documentation_file(_file, extension),
+                        "is_source_code": self.is_source_code_file(extension),
+                        "is_configuration": self.is_configuration_file(_file, extension),
+                        
+                        # RAG-specific metadata
+                        "source_type": "git_repository",
+                        "document_hierarchy": self.get_hierarchy_level(_file),
+                        
+                        # URLs for reference
+                        "source_url": link,
+                        "repository_url": f"https://{platform.lower()}.com/{owner}/{name}",
+                        "raw_url": self.get_raw_url(platform, owner, name, branch, _file),
+                        
+                        # Import metadata
+                        "imported_from": "GitReader",
+                        "import_timestamp": fileConfig.fileID,  # Using fileID as timestamp
+                    }
+                    
                     new_file_config = FileConfig(
                         fileID=fileConfig.fileID,
                         filename=_file,
@@ -117,11 +164,12 @@ class GitReader(Reader):
                         file_size=size,
                         status=fileConfig.status,
                         status_report=fileConfig.status_report,
+                        metadata=enhanced_metadata,
                     )
                     document = await reader.load(config, new_file_config)
                     documents.append(document[0])
             except Exception as e:
-                raise Exception(f"Couldn't load retrieve {_file}: {str(e)}")
+                raise Exception(f"Couldn't load or retrieve {_file}: {str(e)}")
 
         return documents
 
@@ -209,3 +257,99 @@ class GitReader(Reader):
             return {
                 "Authorization": f"Bearer {token}",
             }
+
+    def categorize_file(self, file_path: str, extension: str) -> str:
+        """Categorize file based on path and extension for better RAG context."""
+        file_path_lower = file_path.lower()
+        extension_lower = extension.lower()
+        
+        # Documentation files
+        if any(doc_indicator in file_path_lower for doc_indicator in ['readme', 'doc', 'wiki', 'guide', 'tutorial']):
+            return "documentation"
+        
+        # Configuration files
+        if any(config_indicator in file_path_lower for config_indicator in ['.github', '.vscode', 'config', 'settings']):
+            return "configuration"
+        
+        # Test files
+        if any(test_indicator in file_path_lower for test_indicator in ['test', 'spec', '__test__']):
+            return "test"
+        
+        # Source code by extension
+        if extension_lower in ['py', 'js', 'ts', 'java', 'cpp', 'c', 'go', 'rs', 'php', 'rb']:
+            return "source_code"
+        
+        # Data files
+        if extension_lower in ['json', 'yaml', 'yml', 'xml', 'csv', 'sql']:
+            return "data"
+        
+        # Build/Deploy files
+        if extension_lower in ['dockerfile', 'makefile'] or 'docker' in file_path_lower:
+            return "deployment"
+        
+        return "other"
+
+    def get_content_type(self, extension: str) -> str:
+        """Determine content type for RAG processing optimization."""
+        extension_lower = extension.lower()
+        
+        # Text-based content types
+        text_extensions = ['md', 'txt', 'rst', 'adoc']
+        code_extensions = ['py', 'js', 'ts', 'java', 'cpp', 'c', 'go', 'rs', 'php', 'rb', 'html', 'css']
+        data_extensions = ['json', 'yaml', 'yml', 'xml', 'csv']
+        config_extensions = ['conf', 'cfg', 'ini', 'toml']
+        
+        if extension_lower in text_extensions:
+            return "text_document"
+        elif extension_lower in code_extensions:
+            return "source_code"
+        elif extension_lower in data_extensions:
+            return "structured_data"
+        elif extension_lower in config_extensions:
+            return "configuration"
+        else:
+            return "unknown"
+
+    def is_documentation_file(self, file_path: str, extension: str) -> bool:
+        """Check if file is likely documentation for enhanced RAG retrieval."""
+        doc_extensions = ['md', 'txt', 'rst', 'adoc']
+        doc_keywords = ['readme', 'doc', 'guide', 'tutorial', 'manual', 'wiki', 'help']
+        
+        return (extension.lower() in doc_extensions or 
+                any(keyword in file_path.lower() for keyword in doc_keywords))
+
+    def is_source_code_file(self, extension: str) -> bool:
+        """Check if file is source code for code-specific RAG processing."""
+        code_extensions = ['py', 'js', 'ts', 'tsx', 'jsx', 'java', 'cpp', 'c', 'h', 
+                          'go', 'rs', 'php', 'rb', 'swift', 'kt', 'scala', 'html', 'css']
+        return extension.lower() in code_extensions
+
+    def is_configuration_file(self, file_path: str, extension: str) -> bool:
+        """Check if file is configuration for infrastructure context."""
+        config_extensions = ['json', 'yaml', 'yml', 'toml', 'ini', 'conf', 'cfg']
+        config_keywords = ['config', 'settings', '.env', 'dockerfile', 'makefile', '.github']
+        
+        return (extension.lower() in config_extensions or 
+                any(keyword in file_path.lower() for keyword in config_keywords))
+
+    def get_hierarchy_level(self, file_path: str) -> str:
+        """Determine document hierarchy for RAG context organization."""
+        depth = len(file_path.split('/')) - 1
+        
+        if depth == 0:
+            return "root"
+        elif depth == 1:
+            return "top_level"
+        elif depth <= 3:
+            return "mid_level"
+        else:
+            return "deep_nested"
+
+    def get_raw_url(self, platform: str, owner: str, name: str, branch: str, file_path: str) -> str:
+        """Generate raw content URL for direct file access."""
+        if platform == "GitHub":
+            return f"https://raw.githubusercontent.com/{owner}/{name}/{branch}/{file_path}"
+        else:  # GitLab
+            project_id = urllib.parse.quote(f"{owner}/{name}", safe="")
+            encoded_path = urllib.parse.quote(file_path, safe='')
+            return f"https://gitlab.com/{owner}/{name}/-/raw/{branch}/{file_path}"

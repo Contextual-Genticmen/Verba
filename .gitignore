@@ -25,3 +25,10 @@ ollama
 
 # uv specific
 uv.lock
+
+# configuration
+default_sources.yaml
+
+# (sensitive) assets
+platform_icon_750px.jpg
+platform_icon.ico

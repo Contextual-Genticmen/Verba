@@ -18,16 +18,10 @@ This created a poor user experience for new installations or scenarios with limi
 
 The implemented solution follows a **graceful degradation pattern** across three layers:
 
-```
-┌─────────────────┐     ┌──────────────────┐     ┌─────────────────┐
-│   Frontend UI   │────▶│   Backend API    │────▶│  RAG Pipeline   │
-│                 │     │                  │     │                 │
-│ • Handle empty  │     │ • Log empty      │     │ • Empty checks  │
-│   documents     │     │   results        │     │ • Return empty  │
-│ • Continue      │     │ • Continue       │     │   instead of    │
-│   generation    │     │   processing     │     │   exceptions    │
-│ • User feedback │     │ • No errors      │     │ • Null safety   │
-└─────────────────┘     └──────────────────┘     └─────────────────┘
+```mermaid
+graph LR
+    A[Frontend UI<br/>• Handle empty documents<br/>• Continue generation<br/>• User feedback] --> B[Backend API<br/>• Log empty results<br/>• Continue processing<br/>• No errors]
+    B --> C[RAG Pipeline<br/>• Empty checks<br/>• Return empty instead of exceptions<br/>• Null safety]
 ```
 
 ## Implementation Details

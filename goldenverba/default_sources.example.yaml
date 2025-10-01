@@ -1,0 +1,59 @@
+# Default Sources Configuration (Example)
+# ------------------------------------------------------------
+# Copy this file to `default_sources.yaml` and customize it to
+# automatically import repositories when Verba starts up.
+#
+# Each entry under `sources:` should describe a repository and
+# the reader configuration you want to use. All fields shown
+# below are required unless marked as optional.
+# ------------------------------------------------------------
+
+sources:
+  - fileID: "example-repo-default"
+    filename: "Example Repository Documentation"
+    isURL: true
+    overwrite: false
+    extension: "URL"
+    source: "https://github.com/your-org/your-repo"
+    content: ""
+    labels:
+      - "Documentation"
+      - "Example"
+    metadata: "Auto-imported repository configured via default_sources.yaml"
+    rag_config:
+      Reader:
+        selected: "Git"
+        components:
+          Git:
+            name: "Git"
+            variables: []
+            library: ["aiohttp"]
+            description: "Downloads and ingests all files from a GitHub or GitLab Repo."
+            type: "URL"
+            available: true
+            config:
+              Platform:
+                type: "dropdown"
+                value: "GitHub"  # or "GitLab"
+                description: "Select the Git platform"
+                values: ["GitHub", "GitLab"]
+              Owner:
+                type: "text"
+                value: "your-org"
+                description: "Enter the repo owner (GitHub) or group/user (GitLab)"
+                values: []
+              Name:
+                type: "text"
+                value: "your-repo"
+                description: "Enter the repo name"
+                values: []
+              Branch:
+                type: "text"
+                value: "main"
+                description: "Enter the branch name"
+                values: []
+              Path:
+                type: "text"
+                value: ""
+                description: "Enter the path or leave it empty to import all"
+                values: []

@@ -3,6 +3,8 @@ import importlib
 import math
 import json
 from datetime import datetime
+import yaml
+from pathlib import Path
 
 from dotenv import load_dotenv
 from wasabi import msg
@@ -751,6 +753,105 @@ class VerbaManager:
         ):
             full_text += result["message"]
             yield result
+
+    async def load_default_sources(self, client: WeaviateAsyncClient) -> list[FileConfig]:
+        """Load default sources from YAML configuration file"""
+        try:
+            # Try multiple possible locations for the YAML file
+            possible_paths = [
+                Path(__file__).parent / "default_sources.yaml",  # Installed package location
+                Path("/Verba/goldenverba/default_sources.yaml"),  # Docker mount location
+                Path.cwd() / "goldenverba" / "default_sources.yaml",  # Current working directory
+            ]
+            
+            yaml_path = None
+            for path in possible_paths:
+                if path.exists():
+                    yaml_path = path
+                    break
+            
+            if yaml_path is None:
+                msg.info("No default_sources.yaml found in any expected location, skipping auto-import")
+                return []
+            
+            msg.good(f"Found default_sources.yaml at {yaml_path}")
+            
+            with open(yaml_path, 'r') as f:
+                config = yaml.safe_load(f)
+            
+            if not config or 'sources' not in config:
+                msg.info("No sources defined in default_sources.yaml")
+                return []
+            
+            file_configs = []
+            for source in config['sources']:
+                # Build the complete RAG config by loading current config
+                current_config = await self.load_rag_config(client)
+                
+                # Update Reader config with source-specific settings
+                if 'rag_config' in source and 'Reader' in source['rag_config']:
+                    reader_config = source['rag_config']['Reader']
+                    current_config['Reader']['selected'] = reader_config['selected']
+                    
+                    # Update the component config if provided
+                    if 'components' in reader_config:
+                        for comp_name, comp_config in reader_config['components'].items():
+                            if comp_name in current_config['Reader']['components']:
+                                current_config['Reader']['components'][comp_name]['config'] = comp_config['config']
+                
+                # Create FileConfig object
+                file_config = FileConfig(
+                    fileID=source.get('fileID', f"default-{source['filename']}"),
+                    filename=source['filename'],
+                    isURL=source.get('isURL', True),
+                    overwrite=source.get('overwrite', False),
+                    extension=source.get('extension', 'URL'),
+                    source=source.get('source', ''),
+                    content=source.get('content', ''),
+                    labels=source.get('labels', ['Document']),
+                    rag_config=current_config,
+                    file_size=source.get('file_size', 0),
+                    status=FileStatus.READY,
+                    metadata=source.get('metadata', ''),
+                    status_report={}
+                )
+                
+                file_configs.append(file_config)
+                msg.good(f"Loaded default source: {source['filename']}")
+            
+            return file_configs
+            
+        except Exception as e:
+            msg.fail(f"Failed to load default sources: {str(e)}")
+            return []
+
+    async def import_default_sources(self, client: WeaviateAsyncClient):
+        """Import default sources on startup"""
+        try:
+            file_configs = await self.load_default_sources(client)
+            
+            if not file_configs:
+                return
+            
+            msg.info(f"Starting auto-import of {len(file_configs)} default sources")
+            
+            for file_config in file_configs:
+                # Check if already imported (unless overwrite is True)
+                duplicate_uuid = await self.weaviate_manager.exist_document_name(
+                    client, file_config.filename
+                )
+                
+                if duplicate_uuid is not None and not file_config.overwrite:
+                    msg.info(f"Skipping {file_config.filename} - already exists")
+                    continue
+                
+                msg.info(f"Importing default source: {file_config.filename}")
+                await self.import_document(client, file_config, LoggerManager())
+            
+            msg.good("Default sources import completed")
+            
+        except Exception as e:
+            msg.fail(f"Failed to import default sources: {str(e)}")
 
 
 class ClientManager:

@@ -239,7 +239,7 @@ export const statusTextMap = {
   CHUNKING: "Chunking...",
   LOADING: "Loading...",
   EMBEDDING: "Embedding...",
-  INGESTING: "Weaviating...",
+  INGESTING: "Processing...",
   NER: "Extracting NER...",
   EXTRACTION: "Extraction REL...",
   SUMMARIZING: "Summarizing...",
@@ -482,19 +482,19 @@ export interface Theme {
 
 export const LightTheme: Theme = {
   theme_name: "Light",
-  title: { text: "Verba", type: "text", description: "Title" },
+  title: { text: "Ask Albert (for Teams)", type: "text", description: "Title" },
   subtitle: {
-    text: "The Golden RAGtriever",
+    text: "Albert Chat",
     type: "text",
     description: "Subtitle",
   },
   intro_message: {
-    text: "Welcome to Verba, your open-source RAG application!",
+    text: "Welcome to Ask Albert, your open-source RAG application!",
     type: "text",
     description: "First Message",
   },
   image: {
-    src: "https://github.com/weaviate/Verba/blob/main/img/verba_icon.png?raw=true",
+    src: "/static/platform_icon_750px.jpg",
     type: "image",
     description: "Logo",
   },
@@ -556,15 +556,15 @@ export const LightTheme: Theme = {
 export const DarkTheme: Theme = {
   ...LightTheme,
   theme_name: "Dark",
-  title: { ...LightTheme.title, text: "Verba" },
-  subtitle: { ...LightTheme.subtitle, text: "The Dark RAGtriever" },
+  title: { ...LightTheme.title, text: "Ask Albert (for Teams)" },
+  subtitle: { ...LightTheme.subtitle, text: "Albert Chat" },
   intro_message: {
     ...LightTheme.intro_message,
-    text: "Welcome to Verba, your open-source RAG application!",
+    text: "Welcome to Ask Albert, your open-source RAG application!",
   },
   image: {
     ...LightTheme.image,
-    src: "https://github.com/weaviate/Verba/blob/main/img/verba_icon.png?raw=true",
+    src: "/static/platform_icon_750px.jpg",
   },
   primary_color: { ...LightTheme.primary_color, color: "#BB86FC" },
   secondary_color: { ...LightTheme.secondary_color, color: "#008F82" },
@@ -587,15 +587,15 @@ export const DarkTheme: Theme = {
 export const WCDTheme: Theme = {
   ...LightTheme,
   theme_name: "WCD",
-  title: { ...LightTheme.title, text: "Verba" },
-  subtitle: { ...LightTheme.subtitle, text: "Weaviate Chatbot" },
+  title: { ...LightTheme.title, text: "Ask Albert (for Teams)" },
+  subtitle: { ...LightTheme.subtitle, text: "Albert Chat" },
   intro_message: {
     ...LightTheme.intro_message,
-    text: "Welcome to Verba, your open-source RAG application!",
+    text: "Welcome to Ask Albert, your open-source RAG application!",
   },
   image: {
     ...LightTheme.image,
-    src: "https://github.com/weaviate/Verba/blob/1.0.0/frontend/public/weaviate.png?raw=true",
+    src: "/static/platform_icon_750px.jpg",
   },
   primary_color: { ...LightTheme.primary_color, color: "#BF40C5" },
   secondary_color: { ...LightTheme.secondary_color, color: "#28395B" },
@@ -615,18 +615,18 @@ export const WCDTheme: Theme = {
   theme: "dark",
 };
 
-export const WeaviateTheme: Theme = {
+export const AlbertInventTheme: Theme = {
   ...LightTheme,
-  theme_name: "Weaviate",
-  title: { ...LightTheme.title, text: "Verba" },
-  subtitle: { ...LightTheme.subtitle, text: "Weaviate Chatbot" },
+  theme_name: "Albert-Invent",
+  title: { ...LightTheme.title, text: "Ask Albert (for Teams)" },
+  subtitle: { ...LightTheme.subtitle, text: "Albert Chat" },
   intro_message: {
     ...LightTheme.intro_message,
-    text: "Welcome to Verba, your open-source RAG application!",
+    text: "Welcome to Ask Albert, your open-source RAG application!",
   },
   image: {
     ...LightTheme.image,
-    src: "https://github.com/weaviate/Verba/blob/1.0.0/frontend/public/weaviate.png?raw=true",
+    src: "/static/platform_icon_750px.jpg",
   },
   primary_color: { ...LightTheme.primary_color, color: "#9bfc88" },
   secondary_color: { ...LightTheme.secondary_color, color: "#8bffe7" },

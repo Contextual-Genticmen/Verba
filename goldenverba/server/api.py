@@ -61,6 +61,29 @@ client_manager = verba_manager.ClientManager()
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
+    # Startup: Import default sources if configured
+    try:
+        if production != "Demo":
+            msg.info("Checking for default sources to import on startup...")
+            # Connect to default Weaviate instance
+            default_credentials = Credentials(
+                deployment=os.getenv("DEFAULT_DEPLOYMENT", "Local"),
+                url=os.getenv("WEAVIATE_URL_VERBA", ""),
+                key=os.getenv("WEAVIATE_API_KEY_VERBA", "")
+            )
+            
+            if default_credentials.url:
+                try:
+                    client = await client_manager.connect(default_credentials)
+                    await manager.import_default_sources(client)
+                    msg.good("Default sources import check completed")
+                except Exception as e:
+                    msg.warn(f"Could not import default sources on startup: {str(e)}")
+            else:
+                msg.info("No default Weaviate URL configured, skipping auto-import")
+    except Exception as e:
+        msg.warn(f"Error during startup default source import: {str(e)}")
+    
     yield
     await client_manager.disconnect()
 

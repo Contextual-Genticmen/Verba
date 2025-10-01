@@ -13,6 +13,7 @@ import { CgWebsite } from "react-icons/cg";
 import { FaBackspace } from "react-icons/fa";
 import { HiMiniSparkles } from "react-icons/hi2";
 import { TbDatabaseEdit } from "react-icons/tb";
+import { PiCloudCheck } from "react-icons/pi";
 
 import { connectToVerba } from "@/app/api";
 
@@ -134,6 +135,7 @@ interface LoginViewProps {
   setSelectedTheme: (theme: Theme) => void;
   setThemes: (themes: Themes) => void;
   production: "Local" | "Demo" | "Production";
+  addStatusMessage?: (message: string, type: "INFO" | "WARNING" | "SUCCESS" | "ERROR") => void;
 }
 
 const LoginView: React.FC<LoginViewProps> = ({
@@ -144,6 +146,7 @@ const LoginView: React.FC<LoginViewProps> = ({
   setIsLoggedIn,
   production,
   setRAGConfig,
+  addStatusMessage,
 }) => {
   const [isLoading, setIsLoading] = useState(true);
 
@@ -193,8 +196,9 @@ const LoginView: React.FC<LoginViewProps> = ({
         setErrorText(JSON.stringify(response));
       } else if (response.connected == false) {
         setIsLoggedIn(false);
-        setErrorText(
-          response.error == "" ? "Couldn't connect to Weaviate" : response.error
+        addStatusMessage?.(
+          response.error == "" ? "Couldn't connect to Albert-Invent" : response.error,
+          "ERROR"
         );
       } else {
         setIsLoggedIn(true);
@@ -202,7 +206,7 @@ const LoginView: React.FC<LoginViewProps> = ({
           deployment: deployment,
           key: weaviateAPIKey,
           url: weaviateURL,
-          default_deployment: credentials.default_deployment,
+          default_deployment: deployment,
         });
         setRAGConfig(response.rag_config);
         if (response.themes) {
@@ -252,7 +256,7 @@ const LoginView: React.FC<LoginViewProps> = ({
               color="#FAFAFA"
               useMaterial={production == "Local" ? false : true}
               model_path={
-                production == "Local" ? "/verba.glb" : "/weaviate.glb"
+                production == "Local" ? "/verba.glb" : "/verba.glb"
               }
             />
           </Canvas>
@@ -364,7 +368,7 @@ const LoginView: React.FC<LoginViewProps> = ({
                             name="username"
                             value={weaviateURL}
                             onChange={(e) => setWeaviateURL(e.target.value)}
-                            placeholder="Weaviate URL"
+                            placeholder="Albert-Invent URL"
                             className="grow bg-button-verba text-text-alt-verba hover:text-text-verba w-full"
                             autoComplete="username"
                           />
@@ -402,7 +406,7 @@ const LoginView: React.FC<LoginViewProps> = ({
                           <div className="flex flex-col justify-start gap-2 w-full">
                             <VerbaButton
                               Icon={GrConnect}
-                              title="Connect to Weaviate"
+                              title="Connect to Albert-Invent"
                               type="submit"
                               selected={true}
                               selected_color="bg-primary-verba"
@@ -416,7 +420,7 @@ const LoginView: React.FC<LoginViewProps> = ({
                                 disabled={isConnecting}
                                 onClick={() =>
                                   window.open(
-                                    "https://console.weaviate.cloud",
+                                    "https://console.weaviate.io",
                                     "_blank"
                                   )
                                 }

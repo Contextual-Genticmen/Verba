@@ -1,1 +1,3 @@
 recursive-include goldenverba/server/frontend/out *
+include goldenverba/default_sources.yaml
+include goldenverba/default_sources.example.yaml

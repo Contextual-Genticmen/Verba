@@ -2,6 +2,7 @@ import aiohttp
 import os
 import urllib
 import base64
+import json
 
 from wasabi import msg
 
@@ -151,6 +152,9 @@ class GitReader(Reader):
                         "import_timestamp": fileConfig.fileID,  # Using fileID as timestamp
                     }
                     
+                    # Convert metadata dict to JSON string as required by FileConfig
+                    metadata_str = json.dumps(enhanced_metadata)
+                    
                     new_file_config = FileConfig(
                         fileID=fileConfig.fileID,
                         filename=_file,
@@ -164,7 +168,7 @@ class GitReader(Reader):
                         file_size=size,
                         status=fileConfig.status,
                         status_report=fileConfig.status_report,
-                        metadata=enhanced_metadata,
+                        metadata=metadata_str,
                     )
                     document = await reader.load(config, new_file_config)
                     documents.append(document[0])

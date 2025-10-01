@@ -6,22 +6,11 @@ This guide helps developers customize Verba to integrate multiple GitHub reposit
 
 ## Architecture Overview
 
-```
-┌─────────────────┐     ┌──────────────────┐     ┌─────────────────┐
-│   GitHub Repos  │────▶│   Verba Backend  │────▶│  Vector Store   │
-│                 │     │                  │     │   (Weaviate)    │
-│  - Webhooks     │     │  - Ingestion     │     │                 │
-│  - API Access   │     │  - Re-indexing   │     │  - Embeddings   │
-│                 │     │  - Triggers      │     │  - Metadata     │
-└─────────────────┘     └──────────────────┘     └─────────────────┘
-                               ▲
-                               │
-                        ┌──────────────────┐
-                        │  Client Settings  │
-                        │                  │
-                        │  - Repo Config   │
-                        │  - Index Rules   │
-                        └──────────────────┘
+```mermaid
+graph LR
+    A[GitHub Repos<br/>- Webhooks<br/>- API Access] --> B[Verba Backend<br/>- Ingestion<br/>- Re-indexing<br/>- Triggers]
+    B --> C[Vector Store<br/>Weaviate<br/>- Embeddings<br/>- Metadata]
+    D[Client Settings<br/>- Repo Config<br/>- Index Rules] --> B
 ```
 
 ## Quick Start
@@ -66,7 +55,7 @@ class GitHubReader(Reader):
         self.name = "GitHubReader"
         self.description = "Reads and indexes GitHub repository contents"
         self.requires_env = ["GITHUB_ACCESS_TOKEN"]
-    
+  
         self.config = {
             "Repository URL": InputConfig(
                 type="text",
@@ -98,22 +87,22 @@ class GitHubReader(Reader):
         """Read repository and create documents"""
         repo_url = config["Repository URL"].value
         branch = config["Branch"].value
-    
+  
         # Clone or update repository
         repo_path = await self.clone_or_update_repo(repo_url, branch)
-    
+  
         # Get files based on patterns
         files = self.get_matching_files(
             repo_path,
             config["File Patterns"].value.split('\n'),
             config["Exclude Patterns"].value.split('\n')
         )
-    
+  
         documents = []
         for file_path in files:
             doc = await self.create_document_from_file(file_path, repo_url)
             documents.append(doc)
-    
+  
         return documents
   
     async def clone_or_update_repo(self, repo_url: str, branch: str) -> str:
@@ -174,7 +163,7 @@ async def reindex_github_repos(
     job_id = str(uuid.uuid4())
   
     # Add to background tasks
-    background_tasks.add_task(
+    background_tasks.add_task(	
         process_github_reindex,
         job_id,
         repos,
@@ -201,14 +190,14 @@ async def process_github_reindex(
             # Use GitHubReader to read repository
             reader = GitHubReader()
             documents = await reader.read(repo)
-        
+      
             # Process through RAG pipeline (see RAG_DEV.md for details)
             # The actual chunking, embedding, and storage implementation
             # is handled by the RAG system components
-        
+      
             # Update status
             await update_job_status(job_id, f"Completed {repo['url']}")
-        
+      
         except Exception as e:
             await update_job_status(job_id, f"Failed {repo['url']}: {str(e)}", error=True)
 ```
@@ -249,7 +238,7 @@ const GitHubSettings = () => {
                 }
             })
         });
-    
+  
         const result = await response.json();
         console.log('Re-indexing started:', result.job_id);
     };
@@ -275,7 +264,7 @@ class GitHubRepositoryManager:
     def __init__(self):
         self.repositories = {}
         self.indexing_queue = asyncio.Queue()
-    
+  
     async def add_repository(self, repo_config: dict):
         """Add a repository to be managed"""
         repo_id = self.generate_repo_id(repo_config["url"])
@@ -284,7 +273,7 @@ class GitHubRepositoryManager:
             "last_indexed": None,
             "status": "pending"
         }
-    
+  
     async def remove_repository(self, repo_url: str):
         """Remove a repository from management"""
         repo_id = self.generate_repo_id(repo_url)
@@ -346,13 +335,13 @@ async def handle_github_webhook(
         # Handle push event - trigger re-indexing
         repo_url = payload["repository"]["clone_url"]
         changed_files = extract_changed_files(payload)
-    
+  
         background_tasks.add_task(
             incremental_reindex,
             repo_url,
             changed_files
         )
-    
+  
         return {"status": "accepted", "event": event_type}
   
     return {"status": "ignored", "event": event_type}
@@ -379,7 +368,7 @@ class TestGitHubIntegration:
             "Branch": {"value": "main"},
             "File Patterns": {"value": "*.md"},
         }
-    
+  
         documents = await github_reader.read(config)
         assert len(documents) > 0
         assert all(doc.extension == ".md" for doc in documents)
@@ -390,7 +379,7 @@ class TestGitHubIntegration:
             "repos": [{"url": "https://github.com/test/repo"}],
             "config": {"pipeline": "default"}
         })
-    
+  
         assert response.status_code == 200
         assert "job_id" in response.json()
 ```
@@ -403,13 +392,13 @@ class TestGitHubRAGPipeline:
     @pytest.mark.asyncio
     async def test_full_pipeline(self, verba_manager):
         """Test complete pipeline from GitHub to query"""
-    
+  
         # 1. Index a repository
         await verba_manager.index_github_repo("https://github.com/test/docs")
-    
+  
         # 2. Query the indexed content
         results = await verba_manager.query("How do I install the package?")
-    
+  
         assert len(results) > 0
         assert "installation" in results[0].content.lower()
 ```
@@ -526,7 +515,7 @@ volumes:
 ## Next Steps
 
 1. Review [ADDITIONAL_API_TRIGGER.md](./ADDITIONAL_API_TRIGGER.md) for detailed API documentation
-2. Check [RAG_DEV.md](./RAG_DEV.md) for complete RAG customization guide  
+2. Check [RAG_DEV.md](./RAG_DEV.md) for complete RAG customization guide
 3. See [CUSTOMIZATION.md](./CUSTOMIZATION.md) for empty document handling and graceful degradation patterns
 4. Join the Verba community for support and contributions
 
@@ -537,15 +526,16 @@ volumes:
 Verba now includes robust handling for scenarios with empty or no matching documents:
 
 - **Backend**: Enhanced `managers.py` with collection count checks and null safety
-- **Frontend**: Improved `ChatInterface.tsx` to continue generation without retrieved context  
+- **Frontend**: Improved `ChatInterface.tsx` to continue generation without retrieved context
 - **API**: Updated endpoints to log empty results as informational rather than errors
 - **RAG Pipeline**: Graceful degradation allowing AI generation even without document context
 
 For complete implementation details, see [CUSTOMIZATION.md](./CUSTOMIZATION.md).
 
 **Benefits:**
+
 - Better user experience for new installations
-- Professional handling of empty knowledge bases  
+- Professional handling of empty knowledge bases
 - Continued AI assistance even without relevant documents
 - Robust error handling throughout the RAG pipeline
 

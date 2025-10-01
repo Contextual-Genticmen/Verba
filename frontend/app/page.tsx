@@ -24,7 +24,7 @@ import {
   DarkTheme,
   DocumentFilter,
   WCDTheme,
-  WeaviateTheme,
+  AlbertInventTheme,
 } from "./types";
 
 // Utilities
@@ -43,10 +43,10 @@ export default function Home() {
   const [themes, setThemes] = useState<Themes>({
     Light: LightTheme,
     Dark: DarkTheme,
-    Weaviate: WeaviateTheme,
+    "Albert-Invent": AlbertInventTheme,
     WCD: WCDTheme,
   });
-  const [selectedTheme, setSelectedTheme] = useState<Theme>(themes["Weaviate"]);
+  const [selectedTheme, setSelectedTheme] = useState<Theme>(themes["Albert-Invent"]);
 
   const fontKey = selectedTheme.font.value as FontKey; // Safely cast if you're sure, or use a check
   const fontClassName = fontKey ? fonts[fontKey]?.className || "" : "";
@@ -135,30 +135,30 @@ export default function Home() {
     const themeToUse = selectedTheme;
     const cssVars = {
       "--primary-verba":
-        themeToUse.primary_color?.color || WeaviateTheme.primary_color.color,
+        themeToUse.primary_color?.color || AlbertInventTheme.primary_color.color,
       "--secondary-verba":
         themeToUse.secondary_color?.color ||
-        WeaviateTheme.secondary_color.color,
+        AlbertInventTheme.secondary_color.color,
       "--warning-verba":
-        themeToUse.warning_color?.color || WeaviateTheme.warning_color.color,
-      "--bg-verba": themeToUse.bg_color?.color || WeaviateTheme.bg_color.color,
+        themeToUse.warning_color?.color || AlbertInventTheme.warning_color.color,
+      "--bg-verba": themeToUse.bg_color?.color || AlbertInventTheme.bg_color.color,
       "--bg-alt-verba":
-        themeToUse.bg_alt_color?.color || WeaviateTheme.bg_alt_color.color,
+        themeToUse.bg_alt_color?.color || AlbertInventTheme.bg_alt_color.color,
       "--text-verba":
-        themeToUse.text_color?.color || WeaviateTheme.text_color.color,
+        themeToUse.text_color?.color || AlbertInventTheme.text_color.color,
       "--text-alt-verba":
-        themeToUse.text_alt_color?.color || WeaviateTheme.text_alt_color.color,
+        themeToUse.text_alt_color?.color || AlbertInventTheme.text_alt_color.color,
       "--button-verba":
-        themeToUse.button_color?.color || WeaviateTheme.button_color.color,
+        themeToUse.button_color?.color || AlbertInventTheme.button_color.color,
       "--button-hover-verba":
         themeToUse.button_hover_color?.color ||
-        WeaviateTheme.button_hover_color.color,
+        AlbertInventTheme.button_hover_color.color,
       "--text-verba-button":
         themeToUse.button_text_color?.color ||
-        WeaviateTheme.button_text_color.color,
+        AlbertInventTheme.button_text_color.color,
       "--text-alt-verba-button":
         themeToUse.button_text_alt_color?.color ||
-        WeaviateTheme.button_text_alt_color.color,
+        AlbertInventTheme.button_text_alt_color.color,
     };
     Object.entries(cssVars).forEach(([key, value]) => {
       document.documentElement.style.setProperty(key, value);
@@ -198,6 +198,7 @@ export default function Home() {
           setIsLoggedIn={setIsLoggedIn}
           setRAGConfig={setRAGConfig}
           setCredentials={setCredentials}
+          addStatusMessage={addStatusMessage}
         />
       )}
 
@@ -280,7 +281,7 @@ export default function Home() {
             className={`footer footer-center p-4 mt-8 bg-bg-verba text-text-alt-verba transition-all duration-1500 delay-1000`}
           >
             <aside>
-              <p>Build with ♥ and Weaviate © 2024</p>
+              <p>Build with ♥ and Albert-Invent © 2024</p>
             </aside>
           </div>
         </div>

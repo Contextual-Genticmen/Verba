@@ -13,8 +13,8 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en">
-      <link rel="icon" href="icon.ico" />
-      <link rel="icon" href="static/icon.ico" />
+      <link rel="icon" href="platform_icon.ico" />
+      <link rel="icon" href="static/platform_icon.ico" />
       <body>{children}</body>
     </html>
   );

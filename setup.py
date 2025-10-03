@@ -8,6 +8,7 @@ setup(
     entry_points={
         "console_scripts": [
             "verba=goldenverba.server.cli:cli",
+            "verba-mcp-server=mcp_rag_server.cli:main",
         ],
     },
     author="Weaviate",
@@ -55,6 +56,10 @@ setup(
         ],
         "huggingface": [
             "sentence-transformers==3.0.1",
+        ],
+        "mcp": [
+            "mcp>=1.16.0",
+            "mem0ai>=0.1.118",
         ],
     },
 )

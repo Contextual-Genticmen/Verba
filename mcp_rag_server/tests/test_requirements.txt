@@ -1,0 +1,16 @@
+# Test requirements for MCP RAG server end-to-end tests
+# Install with: pip install -r test_requirements.txt
+
+# Core testing framework
+pytest>=7.4.0
+pytest-asyncio>=0.21.0
+
+# MCP SDK for client connectivity
+mcp>=1.16.0
+
+# LangChain for MCP tools integration (optional but recommended)
+langchain>=0.1.0
+langchain-core>=0.1.0
+
+# Mock and testing utilities
+pytest-mock>=3.12.0

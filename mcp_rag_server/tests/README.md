@@ -18,6 +18,7 @@ The test suite provides comprehensive end-to-end testing of the MCP RAG server i
 
 - **`test_e2e_file_operations.py`**: Main end-to-end test suite with file operations
 - **`test_langchain_integration.py`**: Examples of LangChain integration with MCP RAG server
+- **`run_tests.py`**: Test runner script with dependency checking and easy execution
 - **`test_resources/sample_code.py`**: Sample Python code file for testing
 - **`test_requirements.txt`**: Python dependencies for running tests
 - **`README.md`**: This file
@@ -46,6 +47,27 @@ pip install goldenverba[mcp]
 - pytest-asyncio >= 0.21.0
 
 ## Running the Tests
+
+### Quick Start with Test Runner
+
+The easiest way to run tests is using the provided test runner:
+
+```bash
+# Check dependencies
+python mcp_rag_server/tests/run_tests.py --check-deps
+
+# Run standalone demo (no dependencies required)
+python mcp_rag_server/tests/run_tests.py --demo
+
+# Run LangChain integration demo
+python mcp_rag_server/tests/run_tests.py --langchain-demo
+
+# Install dependencies and run tests
+python mcp_rag_server/tests/run_tests.py --install-deps
+
+# Run tests with verbose output
+python mcp_rag_server/tests/run_tests.py -v
+```
 
 ### Run All Tests with pytest
 

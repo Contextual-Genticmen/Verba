@@ -8,9 +8,7 @@ services:
     ports:
       - 8000:8000
     env_file:
-      - ./goldenverba/.env
-
-
+      - ./goldenverba/.env.local_llm
     volumes:
       - ./data:/data/
     depends_on:
@@ -36,6 +34,7 @@ services:
     image: semitechnologies/weaviate:1.25.10
     ports:
       - 8080:8080
+      - 3000:8080
     volumes:
       - weaviate_data:/var/lib/weaviate
     restart: on-failure:0
@@ -58,22 +57,22 @@ services:
 
   # Uncomment to use Ollama within the same docker compose
 
-  # ollama:
-  #     image: ollama/ollama:latest
-  #     ports:
-  #       - 7869:11434
-  #     volumes:
-  #       - .:/code
-  #       - ./ollama/ollama:/root/.ollama
-  #     container_name: ollama
-  #     pull_policy: always
-  #     tty: true
-  #     restart: always
-  #     environment:
-  #       - OLLAMA_KEEP_ALIVE=24h
-  #       - OLLAMA_HOST=0.0.0.0
-  #     networks:
-  #       - ollama-docker
+  ollama:
+      image: ollama/ollama:latest
+      ports:
+        - 7869:11434
+      volumes:
+        - .:/code
+        - ./ollama/ollama:/root/.ollama/
+      container_name: ollama
+      pull_policy: always
+      tty: true
+      restart: always
+      environment:
+        - OLLAMA_KEEP_ALIVE=24h
+        - OLLAMA_HOST=0.0.0.0
+      networks:
+        - ollama-docker
 
 volumes:
   weaviate_data: {}

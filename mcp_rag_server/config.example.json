@@ -1,0 +1,48 @@
+{
+  "server": {
+    "name": "verba-rag-server",
+    "version": "1.0.0",
+    "log_level": "INFO"
+  },
+  "weaviate": {
+    "url": "http://localhost:8080",
+    "key": null,
+    "timeout": 30
+  },
+  "mem0": {
+    "vector_store": {
+      "provider": "qdrant",
+      "config": {
+        "collection_name": "verba_memories",
+        "host": "localhost",
+        "port": 6333,
+        "api_key": null
+      }
+    },
+    "llm": {
+      "provider": "openai",
+      "config": {
+        "model": "gpt-4o-mini",
+        "temperature": 0.1,
+        "max_tokens": 1000,
+        "api_key": null
+      }
+    },
+    "embedder": {
+      "provider": "openai",
+      "config": {
+        "model": "text-embedding-ada-002",
+        "api_key": null
+      }
+    }
+  },
+  "rag": {
+    "default_chunker": "TokenChunker",
+    "default_embedder": "OpenAIEmbedder",
+    "default_retriever": "BasicRetriever",
+    "default_generator": "OpenAIGenerator",
+    "chunk_size": 500,
+    "chunk_overlap": 50,
+    "max_results": 10
+  }
+}

@@ -8,20 +8,21 @@ const nextConfig = {
     });
     return config;
   },
-  async redirects() {
-    return [
-      {
-        source: '/v1',
-        destination: '/',
-        permanent: true,
-      },
-      {
-        source: '/v1/:path*',
-        destination: '/:path*',
-        permanent: true,
-      },
-    ];
-  },
+  // Redirects don't work with static export
+  // async redirects() {
+  //   return [
+  //     {
+  //       source: '/v1',
+  //       destination: '/',
+  //       permanent: true,
+  //     },
+  //     {
+  //       source: '/v1/:path*',
+  //       destination: '/:path*',
+  //       permanent: true,
+  //     },
+  //   ];
+  // },
 };
 
 // Set assetPrefix only in production/export mode

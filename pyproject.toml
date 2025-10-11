@@ -46,6 +46,9 @@ dependencies = [
     "langdetect==1.0.9",
     "pandas>=2.3.2",
     "pyyaml>=6.0",
+    "mcp>=1.12.4",
+    "mem0ai>=0.1.115",
+    "pymilvus>=2.4.9",
 ]
 
 [project.optional-dependencies]

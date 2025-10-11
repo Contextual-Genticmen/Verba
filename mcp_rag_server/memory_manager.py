@@ -12,11 +12,12 @@ from typing import Any, Dict, List, Optional, Union
 from datetime import datetime
 
 try:
-    from mem0 import AsyncMemory, MemoryClient
+    from mem0 import Memory
+    HAS_MEM0 = True
 except ImportError:
     # Fallback if mem0 is not available
-    AsyncMemory = None
-    MemoryClient = None
+    Memory = None
+    HAS_MEM0 = False
 
 
 class Mem0MemoryManager:
@@ -48,42 +49,44 @@ class Mem0MemoryManager:
         # Always initialize fallback storage
         self._memory_store = {}
         
-        if AsyncMemory is None:
+        if not HAS_MEM0:
             self.logger.warning("mem0 not available, using mock memory manager")
             self.memory_client = None
             return
             
         try:
-            # Configure mem0 based on config
+            # Configure mem0 based on config with proper structure
             mem0_config = {
                 "vector_store": {
-                    "provider": self.config.get("vector_store_provider", "qdrant"),
-                    "config": self.config.get("vector_store_config", {
+                    "provider": self.config.get("vector_store", {}).get("provider", "milvus"),
+                    "config": self.config.get("vector_store", {}).get("config", {
                         "collection_name": "verba_memories",
-                        "host": "localhost",
-                        "port": 6333
+                        "embedding_model_dims": "768",
+                        "url": "./milvus.db"
                     })
                 },
                 "llm": {
-                    "provider": self.config.get("llm_provider", "openai"),
-                    "config": self.config.get("llm_config", {
-                        "model": "gpt-4o-mini",
-                        "temperature": 0.1
+                    "provider": self.config.get("llm", {}).get("provider", "ollama"),
+                    "config": self.config.get("llm", {}).get("config", {
+                        "model": "qwen2.5:0.5b",
+                        "temperature": 0.1,
+                        "base_url": "http://localhost:11434"
                     })
                 },
                 "embedder": {
-                    "provider": self.config.get("embedder_provider", "openai"), 
-                    "config": self.config.get("embedder_config", {
-                        "model": "text-embedding-ada-002"
+                    "provider": self.config.get("embedder", {}).get("provider", "ollama"), 
+                    "config": self.config.get("embedder", {}).get("config", {
+                        "model": "nomic-embed-text:latest",
+                        "base_url": "http://localhost:11434"
                     })
-                }
+                },
+                "version": self.config.get("version", "v1.1")
             }
             
-            # Try to create AsyncMemory synchronously for now - in production this would be async
+            # Create Memory client (synchronous)
             try:
-                # Note: This is a simplified approach. In production, proper async initialization would be needed
-                self.memory_client = None  # Disable mem0 for now due to async initialization complexity
-                self.logger.info("mem0 disabled - using fallback storage (async initialization needed)")
+                self.memory_client = Memory.from_config(mem0_config)
+                self.logger.info("mem0 Memory client initialized successfully with Milvus")
             except Exception as e:
                 self.logger.error(f"Failed to initialize mem0: {e}")
                 self.memory_client = None
@@ -106,12 +109,14 @@ class Mem0MemoryManager:
         """
         if self.memory_client:
             try:
-                result = await self.memory_client.add(
-                    messages=[{"role": "user", "content": message}],
+                # Use synchronous mem0 API in async context
+                result = await asyncio.to_thread(
+                    self.memory_client.add,
+                    messages=message,
                     user_id=user_id,
                     metadata=metadata or {}
                 )
-                return result.get("id", "unknown")
+                return result.get("id", "unknown") if isinstance(result, dict) else str(result)
             except Exception as e:
                 self.logger.error(f"Error adding user message to mem0: {e}")
                 
@@ -142,12 +147,13 @@ class Mem0MemoryManager:
         """
         if self.memory_client:
             try:
-                result = await self.memory_client.add(
-                    messages=[{"role": "assistant", "content": message}],
+                result = await asyncio.to_thread(
+                    self.memory_client.add,
+                    messages=message,
                     user_id=user_id,
                     metadata=metadata or {}
                 )
-                return result.get("id", "unknown")
+                return result.get("id", "unknown") if isinstance(result, dict) else str(result)
             except Exception as e:
                 self.logger.error(f"Error adding assistant message to mem0: {e}")
                 
@@ -177,13 +183,17 @@ class Mem0MemoryManager:
         """
         if self.memory_client:
             try:
-                # Get memories and filter for conversation messages
-                memories = await self.memory_client.get_all(user_id=user_id)
-                conversation = []
-                for memory in memories:
-                    if memory.get("metadata", {}).get("type") == "conversation":
-                        conversation.append(memory)
-                return conversation[-limit:] if conversation else []
+                # Get all memories for user
+                memories = await asyncio.to_thread(
+                    self.memory_client.get_all,
+                    user_id=user_id
+                )
+                # Convert to list if needed
+                if isinstance(memories, dict) and "results" in memories:
+                    memories = memories["results"]
+                elif not isinstance(memories, list):
+                    memories = []
+                return memories[-limit:] if memories else []
             except Exception as e:
                 self.logger.error(f"Error getting conversation history from mem0: {e}")
                 
@@ -207,11 +217,18 @@ class Mem0MemoryManager:
         """
         if self.memory_client:
             try:
-                memories = await self.memory_client.search(
+                memories = await asyncio.to_thread(
+                    self.memory_client.search,
                     query=query,
                     user_id=user_id,
                     limit=limit
                 )
+                
+                # Handle different response formats
+                if isinstance(memories, dict) and "results" in memories:
+                    memories = memories["results"]
+                elif not isinstance(memories, list):
+                    memories = []
                 
                 if memories:
                     # Format memories into context string
@@ -251,15 +268,24 @@ class Mem0MemoryManager:
         """
         if self.memory_client:
             try:
-                if memory_type == "all":
-                    memories = await self.memory_client.get_all(user_id=user_id)
-                else:
+                all_memories = await asyncio.to_thread(
+                    self.memory_client.get_all,
+                    user_id=user_id
+                )
+                # Handle different response formats
+                if isinstance(all_memories, dict) and "results" in all_memories:
+                    all_memories = all_memories["results"]
+                elif not isinstance(all_memories, list):
+                    all_memories = []
+                    
+                if memory_type != "all":
                     # Filter by memory type
-                    all_memories = await self.memory_client.get_all(user_id=user_id)
                     memories = [
                         m for m in all_memories 
                         if m.get("metadata", {}).get("type") == memory_type
                     ]
+                else:
+                    memories = all_memories
                 return memories[:limit] if memories else []
             except Exception as e:
                 self.logger.error(f"Error getting memories from mem0: {e}")
@@ -289,11 +315,17 @@ class Mem0MemoryManager:
         """
         if self.memory_client:
             try:
-                memories = await self.memory_client.search(
+                memories = await asyncio.to_thread(
+                    self.memory_client.search,
                     query=query,
                     user_id=user_id,
                     limit=limit
                 )
+                # Handle different response formats
+                if isinstance(memories, dict) and "results" in memories:
+                    memories = memories["results"]
+                elif not isinstance(memories, list):
+                    memories = []
                 return memories if memories else []
             except Exception as e:
                 self.logger.error(f"Error searching memories in mem0: {e}")
@@ -324,7 +356,8 @@ class Mem0MemoryManager:
         """
         if self.memory_client:
             try:
-                await self.memory_client.update(
+                await asyncio.to_thread(
+                    self.memory_client.update,
                     memory_id=memory_id,
                     data=content
                 )
@@ -355,7 +388,10 @@ class Mem0MemoryManager:
         """
         if self.memory_client:
             try:
-                await self.memory_client.delete(memory_id=memory_id)
+                await asyncio.to_thread(
+                    self.memory_client.delete,
+                    memory_id=memory_id
+                )
                 return True
             except Exception as e:
                 self.logger.error(f"Error deleting memory from mem0: {e}")

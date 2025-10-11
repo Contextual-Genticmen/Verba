@@ -1,0 +1,47 @@
+{
+  "server": {
+    "name": "verba-rag-server",
+    "version": "1.0.0",
+    "log_level": "INFO"
+  },
+  "weaviate": {
+    "url": "http://localhost:8080",
+    "key": null,
+    "timeout": 30
+  },
+  "mem0": {
+    "vector_store": {
+      "provider": "milvus",
+      "config": {
+        "collection_name": "verba_memories",
+        "embedding_model_dims": "768",
+        "url": "./milvus.db"
+      }
+    },
+    "llm": {
+      "provider": "ollama",
+      "config": {
+        "model": "qwen2.5:0.5b",
+        "temperature": 0.1,
+        "base_url": "http://localhost:11434"
+      }
+    },
+    "embedder": {
+      "provider": "ollama",
+      "config": {
+        "model": "nomic-embed-text:latest",
+        "base_url": "http://localhost:11434"
+      }
+    },
+    "version": "v1.1"
+  },
+  "rag": {
+    "default_chunker": "TokenChunker",
+    "default_embedder": "OllamaEmbedder",
+    "default_retriever": "WindowRetriever",
+    "default_generator": "OllamaGenerator",
+    "chunk_size": 500,
+    "chunk_overlap": 50,
+    "max_results": 10
+  }
+}
